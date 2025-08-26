@@ -1,3 +1,5 @@
+export const runtime = 'nodejs';
+
 import { Suspense } from 'react';
 import { Login } from '../login';
 
