@@ -3,6 +3,9 @@ import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { NewUser } from '@/lib/db/schema';
 
+export const runtime = 'nodejs';
+'use server';
+
 const getAuthSecret = () => {
   const s =
     process.env.AUTH_SECRET ||
