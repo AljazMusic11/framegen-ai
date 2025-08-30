@@ -1,4 +1,3 @@
-// app/(login)/login.tsx
 export const runtime = 'nodejs';
 
 import Link from 'next/link';
@@ -6,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CircleIcon } from 'lucide-react';
-import { signIn, signUp } from './actions';
 
 type LoginProps = {
   mode?: 'signin' | 'signup';
@@ -16,9 +14,11 @@ type LoginProps = {
     inviteId?: string;
     error?: string;
   };
+  // accept the server action as a prop from the page
+  action: (formData: FormData) => Promise<any>;
 };
 
-export function Login({ mode = 'signin', searchParams }: LoginProps) {
+export function Login({ mode = 'signin', searchParams, action }: LoginProps) {
   const redirect = searchParams?.redirect ?? '';
   const priceId  = searchParams?.priceId  ?? '';
   const inviteId = searchParams?.inviteId ?? '';
@@ -36,7 +36,7 @@ export function Login({ mode = 'signin', searchParams }: LoginProps) {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <form className="space-y-6" action={mode === 'signin' ? signIn : signUp}>
+        <form className="space-y-6" action={action}>
           <input type="hidden" name="redirect" value={redirect} />
           <input type="hidden" name="priceId"  value={priceId} />
           <input type="hidden" name="inviteId" value={inviteId} />
