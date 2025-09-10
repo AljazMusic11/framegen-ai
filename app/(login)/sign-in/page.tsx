@@ -4,14 +4,16 @@ import { Suspense } from 'react';
 import { Login } from '../login';
 import { signIn } from '../actions';
 
-export default function SignInPage({ searchParams }: { searchParams?: Record<string, string> }) {
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string>>;
+}) {
+  const sp = await searchParams;
+
   return (
     <Suspense>
-      <Login
-        mode="signin"
-        searchParams={searchParams as any}
-        action={signIn}   // pass server action down
-      />
+      <Login mode="signin" searchParams={sp as any} action={signIn} />
     </Suspense>
   );
 }
