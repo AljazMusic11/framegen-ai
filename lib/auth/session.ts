@@ -3,7 +3,15 @@ import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { NewUser } from '@/lib/db/schema';
 
-const key = new TextEncoder().encode(process.env.AUTH_SECRET);
+const getAuthSecret = () => {
+  const s =
+    process.env.AUTH_SECRET ||
+    process.env.NEXTAUTH_SECRET ||
+    process.env.JWT_SECRET;
+  if (!s) throw new Error('Missing auth secret (set AUTH_SECRET or NEXTAUTH_SECRET/JWT_SECRET)');
+  return new TextEncoder().encode(s);
+};
+
 const SALT_ROUNDS = 10;
 
 export async function hashPassword(password: string) {
@@ -23,24 +31,24 @@ type SessionData = {
 };
 
 export async function signToken(payload: SessionData) {
-  return await new SignJWT(payload)
+  const key = getAuthSecret();
+  return new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('1 day from now')
+    .setExpirationTime('1d')
     .sign(key);
 }
 
 export async function verifyToken(input: string) {
-  const { payload } = await jwtVerify(input, key, {
-    algorithms: ['HS256'],
-  });
+  const key = getAuthSecret();
+  const { payload } = await jwtVerify(input, key, { algorithms: ['HS256'] });
   return payload as SessionData;
 }
 
 export async function getSession() {
   const session = (await cookies()).get('session')?.value;
   if (!session) return null;
-  return await verifyToken(session);
+  return verifyToken(session);
 }
 
 export async function setSession(user: NewUser) {
