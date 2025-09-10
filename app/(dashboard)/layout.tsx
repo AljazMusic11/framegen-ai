@@ -1,7 +1,4 @@
-'use client';
-
 import Link from 'next/link';
-import { use, useState, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { CircleIcon, Home, LogOut } from 'lucide-react';
 import {
@@ -12,22 +9,24 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { signOut } from '@/app/(login)/actions';
-import { useRouter } from 'next/navigation';
-import { User } from '@/lib/db/schema';
-import useSWR, { mutate } from 'swr';
+import { getUser } from '@/lib/db/queries';
+import type { User } from '@/lib/db/schema';
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+// Server component: no "use client", no client hooks here.
 
-function UserMenu() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { data: user } = useSWR<User>('/api/user', fetcher);
-  const router = useRouter();
+function initialsFromEmail(email?: string | null) {
+  if (!email) return 'U';
+  return email
+    .split('@')[0]
+    .split(/[.\s_-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => s[0]?.toUpperCase() ?? '')
+    .join('') || 'U';
+}
 
-  async function handleSignOut() {
-    await signOut();
-    mutate('/api/user');
-    router.push('/');
-  }
+async function UserMenu() {
+  const user = (await getUser().catch(() => null)) as User | null;
 
   if (!user) {
     return (
@@ -46,16 +45,11 @@ function UserMenu() {
   }
 
   return (
-    <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+    <DropdownMenu>
       <DropdownMenuTrigger>
         <Avatar className="cursor-pointer size-9">
           <AvatarImage alt={user.name || ''} />
-          <AvatarFallback>
-            {user.email
-              .split(' ')
-              .map((n) => n[0])
-              .join('')}
-          </AvatarFallback>
+          <AvatarFallback>{initialsFromEmail(user.email)}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="flex flex-col gap-1">
@@ -65,7 +59,8 @@ function UserMenu() {
             <span>Dashboard</span>
           </Link>
         </DropdownMenuItem>
-        <form action={handleSignOut} className="w-full">
+        {/* Use a server action via form submission; no client router needed */}
+        <form action={signOut} className="w-full">
           <button type="submit" className="flex w-full">
             <DropdownMenuItem className="w-full flex-1 cursor-pointer">
               <LogOut className="mr-2 h-4 w-4" />
@@ -78,7 +73,9 @@ function UserMenu() {
   );
 }
 
-function Header() {
+async function Header() {
+  // This is a server component header; it can render client components like DropdownMenu/Avatar,
+  // but it must not use client hooks itself.
   return (
     <header className="border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
@@ -87,18 +84,19 @@ function Header() {
           <span className="ml-2 text-xl font-semibold text-gray-900">ACME</span>
         </Link>
         <div className="flex items-center space-x-4">
-          <Suspense fallback={<div className="h-9" />}>
-            <UserMenu />
-          </Suspense>
+          {/* UserMenu is async server component that renders client UI inside */}
+          {/** @ts-expect-error Async Server Component */}
+          <UserMenu />
         </div>
       </div>
     </header>
   );
 }
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default async function Layout({ children }: { children: React.ReactNode }) {
   return (
     <section className="flex flex-col min-h-screen">
+      {/** @ts-expect-error Async Server Component */}
       <Header />
       {children}
     </section>
