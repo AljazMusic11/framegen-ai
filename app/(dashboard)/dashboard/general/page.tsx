@@ -1,15 +1,21 @@
-// app/(dashboard)/dashboard/general/page.tsx
 import { updateAccount } from '@/app/(login)/actions';
 import { getUser } from '@/lib/db/queries';
 
 export default async function GeneralSettingsPage() {
   const user = await getUser().catch(() => null);
 
+  // inline server action wrapper
+  async function onUpdateAccount(formData: FormData) {
+    'use server';
+    // pass an empty prevState since validatedAction expects (prevState, formData)
+    return updateAccount({}, formData);
+  }
+
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
       <h1 className="text-2xl font-semibold">Account</h1>
 
-      <form action={updateAccount} className="space-y-4">
+      <form action={onUpdateAccount} className="space-y-4">
         <div>
           <label className="block text-sm mb-1">Name</label>
           <input
