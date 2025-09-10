@@ -4,12 +4,12 @@ export default async function DashboardHome() {
   // wrappers for validated actions
   async function onInvite(formData: FormData) {
     'use server';
-    return inviteTeamMember({}, formData);
+    await inviteTeamMember({}, formData);
   }
 
   async function onRemove(formData: FormData) {
     'use server';
-    return removeTeamMember({}, formData);
+    await removeTeamMember({}, formData);
   }
 
   return (

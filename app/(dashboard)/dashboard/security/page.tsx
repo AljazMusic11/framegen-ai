@@ -4,12 +4,12 @@ export default async function SecurityPage() {
   // wrappers for validated actions
   async function onUpdatePassword(formData: FormData) {
     'use server';
-    return updatePassword({}, formData);
+    await updatePassword({}, formData);
   }
 
   async function onDeleteAccount(formData: FormData) {
     'use server';
-    return deleteAccount({}, formData);
+    await deleteAccount({}, formData);
   }
 
   return (

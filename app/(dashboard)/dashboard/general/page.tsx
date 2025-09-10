@@ -5,10 +5,9 @@ export default async function GeneralSettingsPage() {
   const user = await getUser().catch(() => null);
 
   // inline server action wrapper
-  async function onUpdateAccount(formData: FormData) {
+    async function onUpdateAccount(formData: FormData) {
     'use server';
-    // pass an empty prevState since validatedAction expects (prevState, formData)
-    return updateAccount({}, formData);
+    await updateAccount({}, formData); // swallow result for now
   }
 
   return (
