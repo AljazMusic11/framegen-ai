@@ -85,7 +85,6 @@ async function Header() {
         </Link>
         <div className="flex items-center space-x-4">
           {/* UserMenu is async server component that renders client UI inside */}
-          {/** @ts-expect-error Async Server Component */}
           <UserMenu />
         </div>
       </div>
@@ -96,7 +95,6 @@ async function Header() {
 export default async function Layout({ children }: { children: React.ReactNode }) {
   return (
     <section className="flex flex-col min-h-screen">
-      {/** @ts-expect-error Async Server Component */}
       <Header />
       {children}
     </section>
