@@ -11,9 +11,15 @@ export default async function SignUpPage({
 }) {
   const sp = await searchParams;
 
+  // inline server action wrapper
+  async function onSignUp(formData: FormData) {
+    'use server';
+    return signUp({}, formData);
+  }
+
   return (
     <Suspense>
-      <Login mode="signup" searchParams={sp as any} action={signUp} />
+      <Login mode="signup" searchParams={sp as any} action={onSignUp} />
     </Suspense>
   );
 }
