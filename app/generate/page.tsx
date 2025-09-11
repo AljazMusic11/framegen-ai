@@ -98,7 +98,14 @@ export default async function GeneratePage() {
   function showResult(url){
     if(!url) return;
     if(player) player.src = url;
-    if(download) download.href = url;
+
+    // Force a real download via same-origin proxy:
+    const proxied = '/api/download?url=' + encodeURIComponent(url) + '&name=video.mp4';
+    if(download){
+      download.href = proxied;
+      download.setAttribute('download', 'video.mp4'); // optional, but fine
+    }
+
     if(result) result.classList.remove('hidden');
   }
   function clearAll(){
