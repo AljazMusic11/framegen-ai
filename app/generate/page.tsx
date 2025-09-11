@@ -1,7 +1,10 @@
-// app/generate/page.tsx
-import { getUser } from "@/lib/db/queries"; // already in your repo
+/**
+ * app/generate/page.tsx
+ * Server page with a minimal client script to call /api/generate and render the result.
+ * Auth required. Mobile-first UI with sticky action bar.
+ */
+import { getUser } from "@/lib/db/queries";
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
 
 export const runtime = "nodejs";
 
@@ -10,62 +13,70 @@ export default async function GeneratePage() {
   if (!user) redirect("/sign-in");
 
   return (
-    <Suspense>
-      <div className="mx-auto max-w-xl p-4 pb-28">
-        <h1 className="text-2xl font-semibold mb-3">Generate a Video</h1>
-        <p className="text-sm text-muted-foreground mb-4">
-          Describe the video you want. Keep it short and specific.
-        </p>
+    <div className="mx-auto max-w-xl p-4 pb-28">
+      <h1 className="text-2xl font-semibold mb-3">Generate a Video</h1>
+      <p className="text-sm text-muted-foreground mb-4">
+        Opiši video, ki ga želiš. Kratek, jasen opis (npr. &quot;neonsko mesto ponoči, 9:16, cinematic&quot;).
+      </p>
 
-        <form id="gen-form" className="space-y-3">
-          <textarea
-            name="prompt"
-            rows={5}
-            placeholder="A slow zoom on neon city streets at night, cinematic, 9:16"
-            className="w-full rounded-lg border p-3 outline-none"
-            required
-          />
-          <select name="model" className="w-full rounded-lg border p-3">
-            <option value="mock">Mock (demo)</option>
-            <option value="replicate-pika">Replicate • Pika</option>
-            <option value="replicate-svd">Replicate • Stable Video</option>
-          </select>
-        </form>
+      <form id="gen-form" className="space-y-3" aria-describedby="progress">
+        <textarea
+          name="prompt"
+          rows={5}
+          placeholder="A slow zoom on neon city streets at night, cinematic, 9:16"
+          className="w-full rounded-lg border p-3 outline-none"
+          required
+          maxLength={600}
+        />
+        <select name="model" className="w-full rounded-lg border p-3" defaultValue="mock">
+          <option value="mock">Mock (demo)</option>
+          <option value="replicate-pika">Replicate • Pika</option>
+          <option value="replicate-svd">Replicate • Stable Video</option>
+        </select>
+      </form>
 
-        {/* result */}
-        <div id="result" className="mt-5 hidden">
-          <h2 className="font-medium mb-2">Result</h2>
-          <video id="player" className="w-full rounded-lg" controls playsInline />
-          <a id="download" className="block text-sm underline mt-2" href="#" download>
-            Download MP4
-          </a>
+      {/* result */}
+      <div id="result" className="mt-5 hidden" aria-live="polite">
+        <h2 className="font-medium mb-2">Result</h2>
+        <video
+          id="player"
+          className="w-full rounded-lg"
+          controls
+          playsInline
+          preload="metadata"
+        />
+        <a id="download" className="block text-sm underline mt-2" href="#" download="video.mp4">
+          Download
+        </a>
+      </div>
+
+      {/* sticky bar */}
+      <div className="fixed inset-x-0 bottom-0 border-t bg-white/80 backdrop-blur p-3">
+        <div className="mx-auto max-w-xl flex gap-3">
+          <button
+            id="generate"
+            form="gen-form"
+            className="flex-1 rounded-lg bg-black text-white py-3 font-medium disabled:opacity-60"
+            type="button"
+            aria-busy="false"
+          >
+            Generate
+          </button>
+          <button
+            id="clear"
+            className="rounded-lg border px-4"
+            type="button"
+          >
+            Clear
+          </button>
         </div>
+        <div id="progress" className="mx-auto max-w-xl text-sm mt-2 h-5" aria-live="polite"></div>
+      </div>
 
-        {/* sticky bar */}
-        <div className="fixed inset-x-0 bottom-0 border-t bg-white/80 backdrop-blur p-3">
-          <div className="mx-auto max-w-xl flex gap-3">
-            <button
-              id="generate"
-              form="gen-form"
-              className="flex-1 rounded-lg bg-black text-white py-3 font-medium disabled:opacity-60"
-              type="button"
-            >
-              Generate
-            </button>
-            <button
-              id="clear"
-              className="rounded-lg border px-4"
-              type="button"
-            >
-              Clear
-            </button>
-          </div>
-          <div id="progress" className="mx-auto max-w-xl text-sm mt-2"></div>
-        </div>
-
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
+      {/* Inline client script (small, no frameworks). Keeps page server-rendered. */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: String.raw`
 (function(){
   const genBtn = document.getElementById('generate');
   const clearBtn = document.getElementById('clear');
@@ -75,38 +86,58 @@ export default async function GeneratePage() {
   const player = document.getElementById('player');
   const download = document.getElementById('download');
 
-  function setProgress(text){ progress.textContent = text || ''; }
-  function setBusy(on){ genBtn.disabled = on; }
+  function setProgress(text){ if(progress) progress.textContent = text || ''; }
+  function setBusy(on){
+    if(!genBtn) return;
+    genBtn.disabled = !!on;
+    genBtn.setAttribute('aria-busy', on ? 'true' : 'false');
+    genBtn.textContent = on ? 'Generating…' : 'Generate';
+  }
+  function showResult(url){
+    if(!url) return;
+    if(player) player.src = url;
+    if(download) download.href = url;
+    if(result) result.classList.remove('hidden');
+  }
+  function clearAll(){
+    if(form) form.reset();
+    if(player) player.removeAttribute('src');
+    if(download) download.removeAttribute('href');
+    if(result) result.classList.add('hidden');
+    setProgress('');
+  }
 
-  clearBtn.addEventListener('click', ()=>{
-    form.reset(); setProgress(''); result.classList.add('hidden');
-  });
+  if(clearBtn) clearBtn.addEventListener('click', clearAll);
 
-  genBtn.addEventListener('click', async ()=>{
+  if(genBtn) genBtn.addEventListener('click', async ()=>{
+    if(!form) return;
     const data = new FormData(form);
     const prompt = data.get('prompt');
     const model = data.get('model');
-    if(!prompt) return;
+    if(!prompt){ return; }
+
     setBusy(true); setProgress('Submitting…');
 
     try{
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'content-type':'application/json' },
-        body: JSON.stringify({ prompt, model })
+        body: JSON.stringify({ prompt, model }),
+        cache: 'no-store',
       });
-      if(!res.ok){ throw new Error('Request failed'); }
+      if(!res.ok){
+        const msg = await res.text().catch(()=> 'Request failed');
+        throw new Error(msg || 'Request failed');
+      }
       const json = await res.json();
 
-      // Mock returns the final URL immediately.
-      if(json.status === 'completed' && json.url){
-        player.src = json.url;
-        download.href = json.url;
-        result.classList.remove('hidden');
+      // Mock returns final URL immediately
+      if((json && json.status === 'completed') && json.url){
+        showResult(json.url);
         setProgress('Done.');
-      }else{
-        // If you later switch to real jobs, you can poll json.jobId here.
-        setProgress('Queued. Check My Videos soon.');
+      } else {
+        // If later you switch to async jobs (e.g., Replicate), you may poll here using json.jobId.
+        setProgress('Queued. Please check My Videos shortly.');
       }
     }catch(e){
       console.error(e);
@@ -117,8 +148,7 @@ export default async function GeneratePage() {
   });
 })();
 `}}
-        />
-      </div>
-    </Suspense>
+      />
+    </div>
   );
 }
