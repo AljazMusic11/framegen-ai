@@ -11,7 +11,7 @@ export async function POST(req: Request) {
 
   // MOCK: return a public sample clip (9:16). Replace with your own later.
   const sample =
-    "https://storage.googleapis.com/web-dev-assets/video-and-source-tags/chrome.webm"; // any public mp4/webm URL works
+    "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"; // any public mp4/webm URL works
 
   // Structure matches what a real provider would send back later.
   return Response.json({
