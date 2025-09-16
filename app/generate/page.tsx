@@ -30,6 +30,14 @@ export default async function GeneratePage() {
           required
           maxLength={600}
         />
+
+        <input
+          name="imageUrl"
+          type="url"
+          className="w-full rounded-lg border p-3"
+          placeholder="https://…/your-image.jpg (optional)"
+        />
+
         <select name="model" className="w-full rounded-lg border p-3" defaultValue="mock">
           <option value="mock">Mock (demo)</option>
           <option value="replicate-pika">Replicate • Pika</option>
