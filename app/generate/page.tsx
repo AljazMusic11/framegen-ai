@@ -131,15 +131,21 @@ export default async function GeneratePage() {
     const data = new FormData(form);
     const prompt = data.get('prompt');
     const model = data.get('model');
+    const imageUrl = data.get('imageUrl') || '';
     if(!prompt){ return; }
 
     setBusy(true); setProgress('Submitting…');
+    
+    if (model === 'replicate-svd' && !imageUrl) 
+    { setProgress('Please add an image URL for SVD.'); 
+    return;
+    }
 
     try{
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'content-type':'application/json' },
-        body: JSON.stringify({ prompt, model }),
+        body: JSON.stringify({ prompt, model, imageUrl }), // include imageUrl
         cache: 'no-store',
       });
       if(!res.ok){
