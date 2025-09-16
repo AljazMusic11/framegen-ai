@@ -18,7 +18,7 @@ export default async function GeneratePage() {
     <div className="mx-auto max-w-xl p-4 pb-28">
       <h1 className="text-2xl font-semibold mb-3">Generate a Video</h1>
       <p className="text-sm text-muted-foreground mb-4">
-        Opiši video, ki ga želiš. Kratek, jasen opis (npr. &quot;neonsko mesto ponoči, 9:16, cinematic&quot;).
+        Describe a video, which you want to create. Short and clear instructions. (ex.: &quot;neon city at night, 9:16, cinematic&quot;).
       </p>
 
       <form id="gen-form" className="space-y-3" aria-describedby="progress">
