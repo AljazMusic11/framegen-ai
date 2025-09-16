@@ -38,6 +38,12 @@ export default async function GeneratePage() {
           placeholder="https://…/your-image.jpg (optional)"
         />
 
+        <input id="imageFile" 
+          type="file" 
+          accept="image/*" 
+          className="w-full rounded-lg border p-3" 
+        />
+
         <select name="model" className="w-full rounded-lg border p-3" defaultValue="mock">
           <option value="mock">Mock (demo)</option>
           <option value="replicate-pika">Replicate • Pika</option>
@@ -131,14 +137,33 @@ export default async function GeneratePage() {
     const data = new FormData(form);
     const prompt = data.get('prompt');
     const model = data.get('model');
-    const imageUrl = data.get('imageUrl') || '';
+    let imageUrl = data.get('imageUrl') || '';
     if(!prompt){ return; }
 
     setBusy(true); setProgress('Submitting…');
-    
-    if (model === 'replicate-svd' && !imageUrl) 
-    { setProgress('Please add an image URL for SVD.'); 
-    return;
+
+    // Try uploading a selected file to Vercel Blob if no imageUrl was provided
+    const fileEl = document.getElementById('imageFile');
+    const file = fileEl && fileEl.files && fileEl.files[0];
+    if (!imageUrl && file) {
+      try {
+        setProgress('Uploading image…');
+        // lightweight client import without bundling
+        const { upload } = await import('https://esm.sh/@vercel/blob@0.23.1/client');
+        const { url } = await upload(\`\${Date.now()}-\${file.name}\`, file, { access: 'public' });
+        imageUrl = url;
+        setProgress('Image uploaded. Submitting…');
+      } catch (err) {
+        console.error(err);
+        setProgress('Failed to upload image.');
+        setBusy(false);
+        return;
+      }
+    }
+
+    if (model === 'replicate-svd' && !imageUrl) {
+      setProgress('Please add an image URL for SVD.');
+      return;
     }
 
     try{
